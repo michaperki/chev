@@ -1,0 +1,23 @@
+
+// prisma/schema.prisma
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"  // SQLite database stored locally
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  wallet     String   @unique // Wallet is unique
+  tokens     Token[]  // One-to-many relation with tokens
+}
+
+model Token {
+  id          Int      @id @default(autoincrement())
+  accessToken String
+  userId      Int      // Foreign key linking to User
+  user        User     @relation(fields: [userId], references: [id])
+}
