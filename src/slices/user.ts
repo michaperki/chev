@@ -1,32 +1,32 @@
 
-// src/slices/userSlice.ts
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+// src/slices/user.ts
+import { createSlice } from '@reduxjs/toolkit';
 
 interface UserState {
   walletAddress: string | null;
-  isAuthenticated: boolean;
+  connected: boolean;
 }
 
 const initialState: UserState = {
   walletAddress: null,
-  isAuthenticated: false,
+  connected: false, // New field for connection status
 };
 
 const userSlice = createSlice({
   name: 'user',
   initialState,
   reducers: {
-    login: (state, action: PayloadAction<string>) => {
-      state.walletAddress = action.payload;
-      state.isAuthenticated = true;
+    connectUser: (state, action) => {
+      state.walletAddress = action.payload.walletAddress;
+      state.connected = true; // Update connected status
     },
-    logout: (state) => {
+    disconnectUser: (state) => {
       state.walletAddress = null;
-      state.isAuthenticated = false;
+      state.connected = false; // Update connected status
     },
   },
 });
 
-export const { login, logout } = userSlice.actions;
+export const { connectUser, disconnectUser } = userSlice.actions;
 export default userSlice.reducer;
 
