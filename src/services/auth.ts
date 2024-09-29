@@ -1,7 +1,8 @@
 
 // src/services/auth.ts
-import { store } from '../store/store'; // Import the Redux store
-import { connectUser } from '../slices/user'; // Import the Redux action
+import { store } from '../store/store';
+import { connectUser } from '../slices/user';
+import { updateSession } from '../slices/session';
 
 export async function connectWallet() {
   if (!window.ethereum) {
@@ -9,21 +10,18 @@ export async function connectWallet() {
   }
 
   try {
-    // Request the user's MetaMask accounts
     const accounts = await window.ethereum.request({
       method: 'eth_requestAccounts',
     });
 
-    const walletAddress = accounts[0]; // Get the first account (default account)
-    const message = `Login to VirtualLabs`; // Message to sign
+    const walletAddress = accounts[0];
+    const message = `Login to VirtualLabs`;
 
-    // Request the user to sign the message using MetaMask
     const signature = await window.ethereum.request({
       method: 'personal_sign',
       params: [message, walletAddress],
     });
 
-    // Send the wallet address, signature, and message to the backend API
     const response = await fetch('/api/connect', {
       method: 'POST',
       headers: {
@@ -38,15 +36,23 @@ export async function connectWallet() {
       throw new Error(data.message || 'Failed to connect');
     }
 
-    // Dispatch the Redux action to update the user's state
-    store.dispatch(
-      connectUser({
-        walletAddress,     // Store the wallet address
-        accessToken: data.accessToken, // Store the access token returned from the backend
-      })
-    );
+    console.log("Connected to wallet:", data);
 
-    return data; // Return the data for further use if needed
+    // Store userId and playerId in Redux
+    store.dispatch(connectUser({
+      walletAddress: data.session.creator,
+      userId: data.userId, // Store local userId (from Prisma)
+      playerId: data.playerId, // Store Virtual Labs playerId
+    }));
+
+    // Store session data in Redux
+    store.dispatch(updateSession({
+      sessionId: data.sessionId,
+      balance: data.session.balance,
+      status: data.session.status,
+    }));
+
+    return data;
   } catch (error) {
     console.error("MetaMask connection failed", error);
     throw error;

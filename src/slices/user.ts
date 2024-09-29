@@ -4,12 +4,16 @@ import { createSlice } from '@reduxjs/toolkit';
 
 interface UserState {
   walletAddress: string | null;
+  userId: number | null; // Store userId (Prisma user ID)
+  playerId: string | null; // Store playerId (Virtual Labs ID)
   connected: boolean;
 }
 
 const initialState: UserState = {
   walletAddress: null,
-  connected: false, // New field for connection status
+  userId: null, // This is your local Prisma userId
+  playerId: null, // This is the playerId from Virtual Labs
+  connected: false,
 };
 
 const userSlice = createSlice({
@@ -18,11 +22,15 @@ const userSlice = createSlice({
   reducers: {
     connectUser: (state, action) => {
       state.walletAddress = action.payload.walletAddress;
-      state.connected = true; // Update connected status
+      state.userId = action.payload.userId; // Store userId
+      state.playerId = action.payload.playerId; // Store playerId
+      state.connected = true;
     },
     disconnectUser: (state) => {
       state.walletAddress = null;
-      state.connected = false; // Update connected status
+      state.userId = null;
+      state.playerId = null;
+      state.connected = false;
     },
   },
 });

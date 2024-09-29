@@ -1,10 +1,13 @@
 
-// src/app/api/connect/route.ts
+import { authenticateWithVirtualLabs } from './authenticateUser';
+import { createPlayerInVirtualLabs } from './playerManagement';
+import { checkAndCreateSession } from './sessionManagement';
+import { upsertUserAndToken } from './userManagement'; // Import this
+
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
-const VIRTUAL_LABS_API_URL = process.env.VIRTUAL_LABS_API_URL;
 
 export async function POST(request: Request) {
   const { walletAddress, signature, message } = await request.json();
@@ -14,63 +17,32 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Send walletAddress, signature, and message to Virtual Labs endpoint
-    const virtualLabsResponse = await fetch(`${VIRTUAL_LABS_API_URL}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        wallet: walletAddress,
-        message,
-        signature,
-      }),
+    // Authenticate with Virtual Labs and get an access token
+    const accessToken = await authenticateWithVirtualLabs(walletAddress, signature, message);
+    console.log('Access token received:', accessToken);
+
+    // Upsert user and token
+    const user = await upsertUserAndToken(walletAddress, accessToken);
+    console.log('User successfully upserted:', user);
+
+    // Create or retrieve player information from Virtual Labs
+    const player = await createPlayerInVirtualLabs(walletAddress, accessToken);
+    console.log('Player created or retrieved:', player);
+
+    // Check for existing sessions or create one if none exist
+    const session = await checkAndCreateSession(walletAddress, accessToken);
+    console.log('Session created or retrieved:', session);
+
+    // Return the userId, playerId, and sessionId to the client
+    return NextResponse.json({
+      success: true,
+      userId: user.id,
+      playerId: player._id,    // Return the player _id from Virtual Labs
+      sessionId: session._id,  // Return the session _id from Virtual Labs
+      session,
     });
-
-    const virtualLabsData = await virtualLabsResponse.json();
-
-    if (!virtualLabsResponse.ok) {
-      throw new Error(virtualLabsData.message || 'Failed to authenticate with Virtual Labs');
-    }
-
-    const { accessToken } = virtualLabsData;
-
-    // Find or create the user by wallet address
-    const user = await prisma.user.upsert({
-      where: { wallet: walletAddress },
-      update: {}, // No need to update the user data
-      create: { wallet: walletAddress },
-    });
-
-    // Check if the token for the user exists using the relation
-    const existingToken = await prisma.token.findFirst({
-      where: {
-        user: {
-          id: user.id, // Reference the user relation
-        },
-      },
-    });
-
-    if (existingToken) {
-      // Token exists, update it
-      await prisma.token.update({
-        where: { id: existingToken.id },
-        data: { accessToken },
-      });
-    } else {
-      // Token does not exist, create a new one
-      await prisma.token.create({
-        data: {
-          accessToken,
-          userId: user.id,
-        },
-      });
-    }
-
-    // Return success to the frontend
-    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error during Virtual Labs authentication:', error);
+    console.error('Error during connection:', error);
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
