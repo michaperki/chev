@@ -1,73 +1,74 @@
 
 "use client";
 
-import React, { useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { RootState } from "../../store/store";
+import { useEffect, useState } from "react";
+import Cookies from "js-cookie";
 import { connectWallet } from "../../services/auth";
-import DepositForm from "../DepositForm";
-import { connectUser } from "../../slices/user";
-import { updateSession } from "../../slices/session";
+import { useSelector } from "react-redux";
+import router from "next/router";
 
-const Header: React.FC = () => {
-  const user = useSelector((state: RootState) => state.user);
-  const session = useSelector((state: RootState) => state.session);
-  const participant = useSelector((state: RootState) => state.participant);
-  const [error, setError] = useState<string | null>(null);
-  const dispatch = useDispatch();
+const Header = () => {
+  const [walletConnected, setWalletConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
 
-  // Handle wallet connection
+  // Access wallet and Lichess token from Redux
+  const reduxWalletAddress = useSelector((state: any) => state.user.walletAddress);
+  const lichessToken = useSelector((state: any) => state.user.lichessAccessToken);
+
+  useEffect(() => {
+    let storedWalletAddress = reduxWalletAddress;
+
+    if (!storedWalletAddress) {
+      // If Redux doesn't have the wallet, try fetching it from cookies
+      storedWalletAddress = Cookies.get("wallet_address");
+    }
+
+    if (storedWalletAddress) {
+      setWalletConnected(true);
+      setWalletAddress(storedWalletAddress); // Set the wallet address
+    }
+
+  }, [reduxWalletAddress]);
+
   const handleConnectWallet = async () => {
     try {
-      const data = await connectWallet();
+      const data = await connectWallet(); // Assuming this connects and updates Redux
 
-      console.log("Connected to wallet:", data);
-
-      // Dispatch Redux actions to store user and session data
-      dispatch(
-        connectUser({
-          walletAddress: data.session.creator,
-          userId: data.userId,
-          playerId: data.playerId,
-        })
-      );
-
-      dispatch(
-        updateSession({
-          sessionId: data.sessionId,
-          balance: data.session.balance,
-          status: data.session.status,
-        })
-      );
-
-      setError(null); // Clear errors if connection is successful
-    } catch (err) {
-      setError("Error connecting to wallet");
-      console.error("Error connecting to wallet:", err);
+      if (data) {
+        // Save to cookies with consistent naming
+        Cookies.set("wallet_address", data.session.creator);
+        setWalletConnected(true);
+        setWalletAddress(data.session.creator); // Update the wallet address state from the backend
+      }
+    } catch (error) {
+      console.error("Failed to connect wallet:", error);
     }
   };
 
   return (
-    <header className="flex justify-between items-center w-full p-4 bg-gray-800 text-white">
-      {/* Conditionally render connect button or session details */}
-      {!user.connected ? (
-        <button
-          onClick={handleConnectWallet}  // Connect wallet only when the button is clicked
-          className="bg-blue-500 text-white p-2"
-        >
-          Connect Wallet
-        </button>
-      ) : (
-        <div className="flex flex-col space-y-2">
-          <p>Connected as: {user.walletAddress}</p>
-            <p>Session ID: {session.sessionId}</p>
-            <p>Player ID: {user.playerId}</p>
-            <p>Participant ID: {participant.participantId}</p>
-            <p>Balance: {participant.balance}</p>
-          <DepositForm /> {/* Show session balance when connected */}
-        </div>
-      )}
-      {error && <p className="text-red-500">{error}</p>}
+    <header className="flex justify-between items-center p-4 bg-gray-800 text-white">
+      <h1>My App</h1>
+      <div className="flex space-x-4">
+        {!walletConnected && (
+          <button
+            onClick={handleConnectWallet}
+            className="bg-blue-500 text-white px-4 py-2 rounded"
+          >
+            Connect Wallet
+          </button>
+        )}
+        {walletConnected && <p>Wallet: {walletAddress}</p>}
+
+        {!lichessToken && (
+          <button
+            onClick={() => router.push("/lichess/login")} // Triggers the Lichess login flow
+            className="bg-green-500 text-white px-4 py-2 rounded"
+          >
+            Authenticate with Lichess
+          </button>
+        )}
+        {lichessToken && <p>Lichess Connected</p>}
+      </div>
     </header>
   );
 };

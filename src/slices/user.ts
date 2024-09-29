@@ -5,7 +5,6 @@ interface UserState {
   userId: string | null;
   playerId: string | null;
   connected: boolean;
-  lichessUsername: string | null;
   lichessAccessToken: string | null;
 }
 
@@ -14,7 +13,6 @@ const initialState: UserState = {
   userId: null,
   playerId: null,
   connected: false,
-  lichessUsername: null,
   lichessAccessToken: null,
 };
 
@@ -29,7 +27,6 @@ const userSlice = createSlice({
       state.connected = true;
     },
     setLichessData: (state, action) => {
-      state.lichessUsername = action.payload.lichessUsername;
       state.lichessAccessToken = action.payload.lichessAccessToken;
     },
     disconnectUser: (state) => {
@@ -37,7 +34,6 @@ const userSlice = createSlice({
       state.userId = null;
       state.playerId = null;
       state.connected = false;
-      state.lichessUsername = null;
       state.lichessAccessToken = null;
     },
   },

@@ -1,8 +1,8 @@
 
-// src/services/auth.ts
-import { store } from '../store/store';
-import { connectUser } from '../slices/user';
+import { store } from '../store';
+import { connectUser, setLichessData } from '../slices/user';
 import { updateSession } from '../slices/session';
+import Cookies from 'js-cookie';
 
 export async function connectWallet() {
   if (!window.ethereum) {
@@ -38,6 +38,8 @@ export async function connectWallet() {
 
     console.log("Connected to wallet:", data);
 
+    Cookies.set("wallet_address", data.session.creator); // Ensure consistency in cookie name
+
     // Store userId and playerId in Redux
     store.dispatch(connectUser({
       walletAddress: data.session.creator,
@@ -52,8 +54,11 @@ export async function connectWallet() {
       status: data.session.status,
     }));
 
-    // Store walletAddress in cookies
-    document.cookie = `wallet_address=${walletAddress}; path=/; Secure; SameSite=Lax`;
+    if (data.lichessToken) {
+      store.dispatch(setLichessData({
+        lichessAccessToken: data.lichessToken,
+      }));
+    }
 
     return data;
   } catch (error) {

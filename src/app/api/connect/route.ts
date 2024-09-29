@@ -3,6 +3,7 @@ import { authenticateWithVirtualLabs } from './authenticateUser';
 import { createPlayerInVirtualLabs } from './playerManagement';
 import { checkAndCreateSession } from './sessionManagement';
 import { upsertUserAndToken } from './userManagement'; // Import this
+import { checkAndReturnLichessToken } from './checkAndReturnLichessToken'; // Import new file
 
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
@@ -33,13 +34,18 @@ export async function POST(request: Request) {
     const session = await checkAndCreateSession(walletAddress, accessToken);
     console.log('Session created or retrieved:', session);
 
-    // Return the userId, playerId, and sessionId to the client
+    // Check if the user has a Lichess token
+    const lichessToken = await checkAndReturnLichessToken(walletAddress);
+    console.log('Lichess token:', lichessToken);
+
+    // Return the userId, playerId, sessionId, and lichessToken (if available) to the client
     return NextResponse.json({
       success: true,
       userId: user.id,
       playerId: player._id,    // Return the player _id from Virtual Labs
       sessionId: session._id,  // Return the session _id from Virtual Labs
       session,
+      lichessToken,            // Return the Lichess token if available
     });
   } catch (error) {
     console.error('Error during connection:', error);
