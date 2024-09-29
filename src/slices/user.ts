@@ -27,6 +27,7 @@ const userSlice = createSlice({
       state.connected = true;
     },
     setLichessData: (state, action) => {
+      console.log('Setting Lichess token in Redux:', action.payload.lichessAccessToken);
       state.lichessAccessToken = action.payload.lichessAccessToken;
     },
     disconnectUser: (state) => {

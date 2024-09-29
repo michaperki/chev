@@ -1,4 +1,5 @@
 
+// src/app/api/lichess/login/route.ts
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 
@@ -30,10 +31,9 @@ export async function GET(request: Request) {
     code_challenge_method: 'S256',
     code_challenge: challenge
   }).toString());
-
-  // Set the verifier in the cookies with `SameSite: Lax` and `HttpOnly` to prevent any issues
-  response.cookies.set('lichess_code_verifier', verifier, { httpOnly: true, sameSite: 'Lax', path: '/' });
+  
+  // Save the verifier in the session (you can use a session library)
+  response.cookies.set('lichess_code_verifier', verifier, { httpOnly: true });
 
   return response;
 }
-

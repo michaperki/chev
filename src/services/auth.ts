@@ -1,9 +1,11 @@
 
+// src/services/auth.ts
 import { store } from '../store';
 import { connectUser, setLichessData } from '../slices/user';
+import Cookies from "js-cookie"; // Import js-cookie for reading cookies
 import { updateSession } from '../slices/session';
-import Cookies from 'js-cookie';
 
+// Function to connect wallet (as it already exists)
 export async function connectWallet() {
   if (!window.ethereum) {
     throw new Error("MetaMask is not installed");
@@ -38,13 +40,14 @@ export async function connectWallet() {
 
     console.log("Connected to wallet:", data);
 
-    Cookies.set("wallet_address", data.session.creator); // Ensure consistency in cookie name
+    // Save wallet address in cookies
+    Cookies.set("wallet_address", data.session.creator); 
 
-    // Store userId and playerId in Redux
+    // Store user data in Redux
     store.dispatch(connectUser({
       walletAddress: data.session.creator,
-      userId: data.userId, // Store local userId (from Prisma)
-      playerId: data.playerId, // Store Virtual Labs playerId
+      userId: data.userId, 
+      playerId: data.playerId, 
     }));
 
     // Store session data in Redux
@@ -54,6 +57,7 @@ export async function connectWallet() {
       status: data.session.status,
     }));
 
+    // Store Lichess token in Redux if available
     if (data.lichessToken) {
       store.dispatch(setLichessData({
         lichessAccessToken: data.lichessToken,
@@ -64,6 +68,18 @@ export async function connectWallet() {
   } catch (error) {
     console.error("MetaMask connection failed", error);
     throw error;
+  }
+}
+
+// Function to restore wallet from cookies (call this on app load)
+export function restoreWalletFromCookies() {
+  const walletAddress = Cookies.get("wallet_address");
+
+  if (walletAddress) {
+    // Restore wallet address in Redux if it exists in cookies
+    store.dispatch(connectUser({
+      walletAddress,
+    }));
   }
 }
 
