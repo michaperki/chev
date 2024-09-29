@@ -8,7 +8,6 @@ const clientId = process.env.NEXT_PUBLIC_LICHESS_CLIENT_ID!;
 const clientSecret = process.env.NEXT_PUBLIC_LICHESS_CLIENT_SECRET!;
 const redirectUri = process.env.NEXT_PUBLIC_LICHESS_REDIRECT_URI!;
 
-// Function to exchange the authorization code for an access token
 async function getLichessToken(authCode: string, verifier: string) {
   const tokenResponse = await fetch('https://lichess.org/api/token', {
     method: 'POST',
@@ -23,18 +22,15 @@ async function getLichessToken(authCode: string, verifier: string) {
     }),
   });
 
-  const tokenData = await tokenResponse.json();
-  console.log("Lichess token response:", tokenData);
-
-  return tokenData;
+  return tokenResponse.json();
 }
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get('code'); // Authorization code from Lichess
-  const verifier = cookies().get('lichess_code_verifier')?.value;
+  const verifier = cookies().get('lichess_code_verifier')?.value; // Fetch verifier from cookies
 
-  // Log the code and verifier received
+  // Log the values to ensure we're getting them correctly
   console.log("Received code from Lichess:", code);
   console.log("Received verifier from cookies:", verifier);
 
@@ -43,7 +39,6 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Exchange the authorization code for an access token
     const tokenData = await getLichessToken(code, verifier);
 
     if (!tokenData.access_token) {
@@ -54,27 +49,35 @@ export async function GET(request: Request) {
     const userResponse = await fetch('https://lichess.org/api/account', {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
-    const userData = await userResponse.json();
-    console.log("Fetched Lichess user data:", userData);
+    const lichessUserData = await userResponse.json();
 
-    // Upsert the Lichess user data into your Prisma database
-    const user = await prisma.user.upsert({
-      where: { lichessId: userData.id },
-      update: {
-        lichessUsername: userData.username,
-        lichessAccessToken: tokenData.access_token,
-      },
-      create: {
-        lichessId: userData.id,
-        lichessUsername: userData.username,
+    console.log("Received Lichess user data:", lichessUserData);
+
+    // Retrieve the connected wallet from cookies (or Redux)
+    const walletAddress = cookies().get('wallet_address')?.value; // Replace with correct method of getting wallet address
+
+    if (!walletAddress) {
+      return NextResponse.json({ success: false, message: 'Wallet address not found' }, { status: 400 });
+    }
+
+    // Find the user by wallet address and update the Lichess information
+    const user = await prisma.user.update({
+      where: { wallet: walletAddress }, // Find the user by wallet address
+      data: {
+        lichessId: lichessUserData.id,
+        lichessUsername: lichessUserData.username,
         lichessAccessToken: tokenData.access_token,
       },
     });
 
-    console.log("User successfully upserted in the database:", user);
+    // If the user doesn't exist, we should not create a new user because they must have logged in via their wallet first
+    if (!user) {
+      return NextResponse.json({ success: false, message: 'User with connected wallet not found' }, { status: 404 });
+    }
 
-    // Return success response or redirect to a success page
-    return NextResponse.redirect(`/success`); // Or wherever you want to redirect after success
+    // Redirect to the desired page after successful login
+    const redirectUrl = `${url.origin}/dashboard`; // Use absolute URL
+    return NextResponse.redirect(redirectUrl); // Adjust the redirect URL as needed
   } catch (error) {
     console.error('Error during Lichess callback:', error);
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });

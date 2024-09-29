@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Cookies from "js-cookie"; // Import js-cookie
 
 const LichessLoginCallback = () => {
   const [error, setError] = useState<string | null>(null);
@@ -13,22 +14,20 @@ const LichessLoginCallback = () => {
   useEffect(() => {
     const fetchLichessToken = async (code: string, verifier: string) => {
       try {
-        // Log the code and verifier being sent to the backend
+        // Add more logging for debugging purposes
         console.log("Sending code to backend:", code);
         console.log("Sending verifier to backend:", verifier);
 
         const response = await fetch("/api/lichess/callback", {
-          method: "POST",
+          method: "GET", // Correct method for retrieving query params
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code, verifier }),
         });
 
         const data = await response.json();
 
         if (response.ok) {
           console.log("Lichess token received:", data);
-          // Redirect to success page
-          router.push("/success");
+          router.push("/dashboard");
         } else {
           setError(data.message || "Failed to exchange Lichess token");
         }
@@ -41,11 +40,10 @@ const LichessLoginCallback = () => {
     };
 
     const code = searchParams.get("code");
-    const verifier = localStorage.getItem("lichess_code_verifier");
+    const verifier = Cookies.get("lichess_code_verifier"); // Retrieve verifier from cookies
 
-    // Log the code and verifier to ensure they are correctly retrieved
     console.log("Received code from URL:", code);
-    console.log("Retrieved verifier from localStorage:", verifier);
+    console.log("Retrieved verifier from cookies:", verifier);
 
     if (code && verifier) {
       fetchLichessToken(code, verifier);

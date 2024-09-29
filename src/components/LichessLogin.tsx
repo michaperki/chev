@@ -4,7 +4,7 @@
 const generateCodeVerifier = () => {
   const array = new Uint32Array(56 / 2);
   window.crypto.getRandomValues(array);
-  return Array.from(array, dec => ("0" + dec.toString(16)).substr(-2)).join("");
+  return Array.from(array, (dec) => ("0" + dec.toString(16)).substr(-2)).join("");
 };
 
 const base64URLEncode = (str: ArrayBuffer) => {
@@ -30,12 +30,8 @@ const LichessLogin: React.FC = () => {
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = await generateCodeChallenge(codeVerifier);
 
-    // Log the generated code verifier and challenge
-    console.log("Code Verifier:", codeVerifier);
-    console.log("Code Challenge:", codeChallenge);
-
-    // Save the code verifier in localStorage
-    localStorage.setItem("lichess_code_verifier", codeVerifier);
+    // Save the code verifier in cookies
+    document.cookie = `lichess_code_verifier=${codeVerifier}; path=/;`;
 
     const params = new URLSearchParams({
       response_type: "code",
@@ -46,10 +42,7 @@ const LichessLogin: React.FC = () => {
       code_challenge: codeChallenge,
     });
 
-    // Log the full URL for the Lichess OAuth request
-    console.log("Redirecting to:", `https://lichess.org/oauth?${params.toString()}`);
-
-    // Redirect to Lichess for authentication
+    // Redirect to Lichess for authentication in the same tab
     window.location.href = `https://lichess.org/oauth?${params.toString()}`;
   };
 

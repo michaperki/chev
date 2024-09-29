@@ -52,6 +52,9 @@ export async function connectWallet() {
       status: data.session.status,
     }));
 
+    // Store walletAddress in cookies
+    document.cookie = `wallet_address=${walletAddress}; path=/; Secure; SameSite=Lax`;
+
     return data;
   } catch (error) {
     console.error("MetaMask connection failed", error);
