@@ -5,13 +5,14 @@ import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../store/store";
 import { connectWallet } from "../../services/auth";
-import SessionBalance from "../SessionBalance";
+import DepositForm from "../DepositForm";
 import { connectUser } from "../../slices/user";
 import { updateSession } from "../../slices/session";
 
 const Header: React.FC = () => {
   const user = useSelector((state: RootState) => state.user);
   const session = useSelector((state: RootState) => state.session);
+  const participant = useSelector((state: RootState) => state.participant);
   const [error, setError] = useState<string | null>(null);
   const dispatch = useDispatch();
 
@@ -57,13 +58,13 @@ const Header: React.FC = () => {
           Connect Wallet
         </button>
       ) : (
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-col space-y-2">
           <p>Connected as: {user.walletAddress}</p>
-          <div className="flex items-center space-x-2">
             <p>Session ID: {session.sessionId}</p>
             <p>Player ID: {user.playerId}</p>
-          </div>
-          <SessionBalance /> {/* Show session balance when connected */}
+            <p>Participant ID: {participant.participantId}</p>
+            <p>Balance: {participant.balance}</p>
+          <DepositForm /> {/* Show session balance when connected */}
         </div>
       )}
       {error && <p className="text-red-500">{error}</p>}

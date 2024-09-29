@@ -10,9 +10,14 @@ generator client {
 }
 
 model User {
-  id         Int      @id @default(autoincrement())
-  wallet     String   @unique // Wallet is unique
-  tokens     Token[]  // One-to-many relation with tokens
+  id                Int      @id @default(autoincrement())
+  wallet            String?  @unique // Unique wallet address
+  lichessId         String?  @unique // Unique Lichess ID
+  lichessUsername   String?  // Lichess username
+  lichessAccessToken String? // Store the access token for making requests
+  tokens            Token[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model Token {

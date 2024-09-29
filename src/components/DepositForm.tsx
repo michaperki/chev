@@ -1,8 +1,11 @@
 
+// src/components/DepositForm.tsx
+
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store/store';
-import { depositIntoSession } from '../services/session';
+import { depositIntoSession, createParticipant } from '../services/session';
+import { updateParticipant } from '../slices/participant'; // Import the participant action
 
 const DepositForm: React.FC = () => {
   const user = useSelector((state: RootState) => state.user); // Get user data from Redux
@@ -10,6 +13,7 @@ const DepositForm: React.FC = () => {
   const [depositAmount, setDepositAmount] = useState<string>(''); // Track deposit amount
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const dispatch = useDispatch();
 
   const handleDeposit = async () => {
     try {
@@ -18,19 +22,23 @@ const DepositForm: React.FC = () => {
         return;
       }
 
-      console.log('Depositing into session:', session.sessionId);
-      console.log('Depositing amount:', depositAmount);
-      console.log('Wallet Address:', user.walletAddress);
-      console.log('User: ', user);
+      // Step 1: Deposit into session
+      const depositResponse = await depositIntoSession(user.playerId, user.walletAddress, session.sessionId, depositAmount);
+      
+      // Step 2: Create or fetch participant after deposit
+      const participantResponse = await createParticipant(user.userId, user.playerId, session.sessionId, depositAmount);
 
-      // Call backend to deposit into session, using walletAddress instead of playerId
-      const response = await depositIntoSession(user.walletAddress, session.sessionId, depositAmount);
-      setSuccessMessage('Deposit successful!');
+      // Dispatch the correct _id (MongoDB identifier) to Redux
+      dispatch(updateParticipant({
+        participantId: participantResponse.participant._id, // Store the _id
+        balance: participantResponse.participant.balance,   // Store balance
+      }));
+
+      setSuccessMessage('Deposit and participant creation successful!');
       setError(null);
     } catch (error) {
-      setError('Failed to deposit into session');
-      setSuccessMessage(null);
-      console.error('Error depositing into session:', error);
+      setError('Failed to deposit into session or create participant');
+      console.error('Error:', error);
     }
   };
 

@@ -3,11 +3,13 @@
 import { configureStore } from '@reduxjs/toolkit';
 import userReducer from '../slices/user'; // User slice
 import sessionReducer from '../slices/session'; // Session slice
+import participantReducer from '../slices/participant'; // Participant slice
 
 export const store = configureStore({
   reducer: {
-    user: userReducer, // Add user slice
-    session: sessionReducer, // Add session slice
+    user: userReducer,
+    session: sessionReducer,
+    participant: participantReducer, // Add participant slice
   },
 });
 
