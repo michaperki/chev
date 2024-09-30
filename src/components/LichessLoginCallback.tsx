@@ -3,25 +3,24 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useDispatch } from "react-redux";
-import { setLichessData } from "../slices/user"; // Import the Redux action to set Lichess data
-import Cookies from "js-cookie"; // Import js-cookie
+import { useDispatch, useSelector } from "react-redux";
+import { setLichessData } from "../slices/user";
+import Cookies from "js-cookie";
 
 const LichessLoginCallback = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const dispatch = useDispatch(); // Get the dispatch function from Redux
+  const dispatch = useDispatch();
+  
+  const walletAddress = useSelector((state: any) => state.user.walletAddress); // Fetch wallet from Redux
 
   useEffect(() => {
     const fetchLichessToken = async (code: string, verifier: string) => {
       try {
-        console.log("Sending code to backend:", code);
-        console.log("Sending verifier to backend:", verifier);
-
         const response = await fetch("/api/lichess/callback", {
-          method: "GET", // Correct method for retrieving query params
+          method: "GET",
           headers: { "Content-Type": "application/json" },
         });
 
@@ -30,11 +29,10 @@ const LichessLoginCallback = () => {
         if (response.ok) {
           console.log("Lichess token received:", data);
 
-          // Update the Redux store with the Lichess token
-          dispatch(setLichessData({
-            lichessAccessToken: data.token,
-          }));
+          // Dispatch Lichess token to Redux
+          dispatch(setLichessData({ lichessAccessToken: data.token }));
 
+          // Redirect to dashboard after successful login
           router.push("/dashboard");
         } else {
           setError(data.message || "Failed to exchange Lichess token");
@@ -50,16 +48,18 @@ const LichessLoginCallback = () => {
     const code = searchParams.get("code");
     const verifier = Cookies.get("lichess_code_verifier");
 
-    console.log("Received code from URL:", code);
-    console.log("Retrieved verifier from cookies:", verifier);
-
     if (code && verifier) {
-      fetchLichessToken(code, verifier);
+      if (walletAddress) {
+        fetchLichessToken(code, verifier); // Fetch token only if walletAddress exists
+      } else {
+        setError("Missing wallet address");
+        setLoading(false);
+      }
     } else {
       setError("Missing authorization code or verifier");
       setLoading(false);
     }
-  }, [router, searchParams, dispatch]);
+  }, [router, searchParams, dispatch, walletAddress]);
 
   return (
     <div>

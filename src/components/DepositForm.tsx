@@ -4,7 +4,8 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store/store';
-import { depositIntoSession, createParticipant } from '../services/session';
+import { depositIntoSession } from '../services/session';
+import { createParticipant } from '../services/participant';
 import { updateParticipant } from '../slices/participant'; // Import the participant action
 
 const DepositForm: React.FC = () => {
@@ -22,8 +23,14 @@ const DepositForm: React.FC = () => {
         return;
       }
 
+      console.log('Depositing into session:', session.sessionId);
+      console.log('User:', user.userId);
+      console.log('Player:', user.playerId);
+      console.log('Wallet:', user.walletAddress);
+      console.log('Amount:', depositAmount);
+
       // Step 1: Deposit into session
-      const depositResponse = await depositIntoSession(user.playerId, user.walletAddress, session.sessionId, depositAmount);
+      const depositResponse = await depositIntoSession(user.userId, user.walletAddress, session.sessionId, depositAmount);
       
       // Step 2: Create or fetch participant after deposit
       const participantResponse = await createParticipant(user.userId, user.playerId, session.sessionId, depositAmount);

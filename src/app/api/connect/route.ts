@@ -1,14 +1,11 @@
 
-import { authenticateWithVirtualLabs } from './authenticateUser';
-import { createPlayerInVirtualLabs } from './playerManagement';
-import { checkAndCreateSession } from './sessionManagement';
-import { upsertUserAndToken } from './userManagement'; // Import this
-import { checkAndReturnLichessToken } from './checkAndReturnLichessToken'; // Import new file
+import { authenticateWithVirtualLabs } from '../../../services/virtualLabs/user';
+import { createPlayerInVirtualLabs } from '../../../services/virtualLabs/player';
+import { checkAndCreateSession } from '../../../services/virtualLabs/session';
+import { upsertUserAndToken } from '../../../services/user'; // Import this
+import { checkAndReturnLichessToken } from '../../../services/lichess';
 
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   const { walletAddress, signature, message } = await request.json();

@@ -4,9 +4,9 @@
 import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { connectWallet } from "../../services/auth";
+import { initiateLichessLogin } from "../../services/lichessAuth";
 import { useSelector, useDispatch } from "react-redux";
-import { setLichessData } from "../../slices/user"; // Redux action to store Lichess token
-import { initiateLichessLogin, fetchLichessToken } from "../../services/lichessAuth";
+import { setLichessData, connectUser } from "../../slices/user";
 
 const Header = () => {
   const [walletConnected, setWalletConnected] = useState(false);
@@ -19,9 +19,6 @@ const Header = () => {
   const lichessToken = useSelector((state: any) => state.user.lichessAccessToken);
 
   useEffect(() => {
-    console.log("Redux Wallet Address:", reduxWalletAddress);
-    console.log("Lichess Token:", lichessToken);
-
     let storedWalletAddress = reduxWalletAddress;
 
     if (!storedWalletAddress) {
@@ -31,27 +28,35 @@ const Header = () => {
 
     if (storedWalletAddress) {
       setWalletConnected(true);
-      setWalletAddress(storedWalletAddress); // Set the wallet address
+      setWalletAddress(storedWalletAddress);
 
-      // If we have the wallet but no Lichess token in Redux, check the backend
+      // Update the wallet in Redux if it's not already there
+      if (!reduxWalletAddress) {
+        dispatch(connectUser({ walletAddress: storedWalletAddress }));
+      }
+
+      // If wallet is connected but Lichess token isn't in Redux, fetch from backend
       if (!lichessToken) {
-        fetchLichessToken(storedWalletAddress).then((token) => {
-          if (token) {
-            dispatch(setLichessData({ lichessAccessToken: token })); // Update Redux with the Lichess token
-          }
-        });
+        fetch(`/api/lichess/token?walletAddress=${storedWalletAddress}`)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.lichessToken) {
+              dispatch(setLichessData({ lichessAccessToken: data.lichessToken }));
+            }
+          })
+          .catch((error) => console.error("Failed to fetch Lichess token:", error));
       }
     }
   }, [reduxWalletAddress, lichessToken, dispatch]);
 
   const handleConnectWallet = async () => {
     try {
-      const data = await connectWallet(); // Connect the wallet and update Redux
-
+      const data = await connectWallet();
       if (data) {
-        Cookies.set("wallet_address", data.session.creator); // Store wallet in cookies
+        Cookies.set("wallet_address", data.session.creator);
         setWalletConnected(true);
-        setWalletAddress(data.session.creator); // Update state
+        setWalletAddress(data.session.creator);
+        dispatch(connectUser({ walletAddress: data.session.creator }));
       }
     } catch (error) {
       console.error("Failed to connect wallet:", error);
@@ -74,7 +79,7 @@ const Header = () => {
 
         {!lichessToken && (
           <button
-            onClick={initiateLichessLogin} // Triggers Lichess login flow
+            onClick={initiateLichessLogin}
             className="bg-green-500 text-white px-4 py-2 rounded"
           >
             Authenticate with Lichess

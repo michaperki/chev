@@ -1,64 +1,62 @@
 
 // src/app/api/participant/create/route.ts
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client'; // Import Prisma Client
+import { createPlayerInVirtualLabs } from '../../../../services/virtualLabs/player'; // Import the refactored function
+import { createOrFetchParticipant } from '../../../../services/virtualLabs/participant'; // Import the refactored function
 
-const prisma = new PrismaClient();
-const VIRTUAL_LABS_API_URL = process.env.VIRTUAL_LABS_API_URL;
+const prisma = new PrismaClient(); // Initialize Prisma Client
 
 export async function POST(request: Request) {
-  const { playerId, sessionId, sessionBalance, userId } = await request.json();
-  console.log(`Creating or fetching participant for player ID: ${playerId} and session ID: ${sessionId}`);
+  const { sessionId, sessionBalance, userId } = await request.json();
+  console.log('POST request received to create participant');
+  console.log(`Session ID: ${sessionId}`);
+  console.log(`Session Balance: ${sessionBalance}`);
+  console.log(`User ID: ${userId}`);
 
-  if (!playerId || !sessionId || !sessionBalance || !userId) {
+  if (!sessionId || !sessionBalance || !userId) {
     return NextResponse.json({ success: false, message: 'Missing parameters' }, { status: 400 });
   }
 
   try {
-    // Step 1: Retrieve the access token from the database using the user ID
-    const userWithToken = await prisma.user.findUnique({
+    // Step 1: Retrieve the walletAddress and accessToken from the user and token tables
+    const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { tokens: true },
     });
 
-    if (!userWithToken || !userWithToken.tokens[0]?.accessToken) {
-      return NextResponse.json({ success: false, message: 'User or token not found' }, { status: 404 });
+    if (!user) {
+      return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 });
     }
 
-    const bearerToken = userWithToken.tokens[0].accessToken;
-
-    // Step 2: Call the createParticipant endpoint
-    const participantResponse = await fetch(`${VIRTUAL_LABS_API_URL}/participant/createParticipant`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${bearerToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        _playerId: playerId,
-        _sessionId: sessionId,
-        sessionBalance: sessionBalance,
-        active: true,
-      }),
+    const tokenRecord = await prisma.token.findFirst({
+      where: { userId: user.id },
+      select: { accessToken: true },
     });
 
-    // Step 3: Check if the request was successful
-    const participantData = await participantResponse.json();
-
-    if (!participantResponse.ok) {
-      console.error(`Error creating participant: ${participantData.message || participantData}`);
-      return NextResponse.json({ success: false, message: participantData.message || 'Failed to create participant' }, { status: participantResponse.status });
+    if (!tokenRecord?.accessToken) {
+      return NextResponse.json({ success: false, message: 'Access token not found' }, { status: 404 });
     }
 
-    // Step 4: Return the participant data
-    console.log(`Participant created or retrieved successfully: ${JSON.stringify(participantData)}`);
+    const walletAddress = user.wallet; // Assuming user has the `wallet` field
+    const accessToken = tokenRecord.accessToken;
+
+    console.log(`Wallet address: ${walletAddress}`);
+    console.log(`Access token: ${accessToken}`);
+
+    // Step 2: Use the walletAddress and accessToken to create or retrieve the player ID
+    const player = await createPlayerInVirtualLabs(walletAddress, accessToken);
+
+    // a string of emoji characters
+    console.log(' ✅ ');
+
+    console.log(`Player ID: ${player._id}`);
+
+    // Step 3: Create or fetch the participant using the playerId, sessionId, and sessionBalance
+    const participant = await createOrFetchParticipant(player._id, sessionId, sessionBalance, userId);
+
     return NextResponse.json({ 
       success: true, 
-      participant: { 
-        _id: participantData._id, // This is the ID we need
-        balance: participantData.sessionBalance, 
-        ...participantData 
-      } 
+      participant 
     });
 
   } catch (error) {

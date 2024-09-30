@@ -24,6 +24,7 @@ export async function POST(request: Request) {
       include: { tokens: true },
     });
 
+
     if (!userWithToken || !userWithToken.tokens[0]?.accessToken) {
       return NextResponse.json({ success: false, message: 'User or token not found' }, { status: 404 });
     }
