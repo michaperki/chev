@@ -3,10 +3,10 @@
 
 import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
-import { connectWallet } from "../../services/auth";
-import { initiateLichessLogin } from "../../services/lichessAuth";
+import { connectWallet } from "@/services/auth";
+import { initiateLichessLogin } from "@/externalServices/lichess/lichessAuth";
 import { useSelector, useDispatch } from "react-redux";
-import { setLichessData, connectUser } from "../../slices/user";
+import { setLichessData, connectUser } from "@/slices/user";
 
 const Header = () => {
   const [walletConnected, setWalletConnected] = useState(false);

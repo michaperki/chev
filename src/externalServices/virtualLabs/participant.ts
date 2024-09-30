@@ -1,27 +1,20 @@
 
-// src/services/virtualLabs/participant.ts
-import { PrismaClient } from '@prisma/client';
+import { getAccessTokenForUser } from '@/repositories/user'; // New file for Prisma DB logic
 
-const prisma = new PrismaClient();
 const VIRTUAL_LABS_API_URL = process.env.VIRTUAL_LABS_API_URL;
 
 export async function createOrFetchParticipant(playerId: string, sessionId: string, sessionBalance: number, userId: number) {
   console.log(`Creating or fetching participant for player ID: ${playerId} and session ID: ${sessionId}`);
 
   try {
-    // Fetch the user using the correct userId type (integer)
-    const userWithToken = await prisma.user.findUnique({
-      where: { id: userId }, // Ensure `userId` is an integer
-      include: { tokens: true },
-    });
+    // Get bearer token using a helper function (decoupling Prisma logic)
+    const bearerToken = await getAccessTokenForUser(userId);
 
-    if (!userWithToken || !userWithToken.tokens[0]?.accessToken) {
+    if (!bearerToken) {
       throw new Error('User or token not found');
     }
 
-    const bearerToken = userWithToken.tokens[0].accessToken;
-
-    // Call the createParticipant endpoint
+    // Call the createParticipant endpoint in Virtual Labs
     const participantResponse = await fetch(`${VIRTUAL_LABS_API_URL}/participant/createParticipant`, {
       method: 'POST',
       headers: {
@@ -31,7 +24,7 @@ export async function createOrFetchParticipant(playerId: string, sessionId: stri
       body: JSON.stringify({
         _playerId: playerId,
         _sessionId: sessionId,
-        sessionBalance: sessionBalance,
+        sessionBalance,
         active: true,
       }),
     });
@@ -45,7 +38,7 @@ export async function createOrFetchParticipant(playerId: string, sessionId: stri
     console.log(`Participant created or retrieved successfully: ${JSON.stringify(participantData)}`);
 
     return {
-      _id: participantData._id,  // ID of the participant
+      _id: participantData._id,  // Participant ID
       balance: participantData.sessionBalance,
       ...participantData,
     };

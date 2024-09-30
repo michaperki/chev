@@ -2,8 +2,8 @@
 // src/app/api/participant/create/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client'; // Import Prisma Client
-import { createPlayerInVirtualLabs } from '../../../../services/virtualLabs/player'; // Import the refactored function
-import { createOrFetchParticipant } from '../../../../services/virtualLabs/participant'; // Import the refactored function
+import { createPlayerInVirtualLabs } from '../../../../externalServices/virtualLabs/player'; // Import the refactored function
+import { createOrFetchParticipant } from '../../../../externalServices/virtualLabs/participant';
 
 const prisma = new PrismaClient(); // Initialize Prisma Client
 

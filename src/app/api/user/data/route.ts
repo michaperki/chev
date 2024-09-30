@@ -2,10 +2,10 @@
 // src/app/api/user/data.ts
 import { PrismaClient } from '@prisma/client';
 import { NextResponse } from 'next/server';
-import { checkAndCreateSession } from '../../../../services/virtualLabs/session';
-import { checkAndReturnLichessToken } from '../../../../services/lichess';
-import { createOrFetchParticipant } from '../../../../services/virtualLabs/participant';
-import { createPlayerInVirtualLabs } from '../../../../services/virtualLabs/player'; // Import player management logic
+import { checkAndReturnLichessToken } from '@/repositories/lichess';
+import { checkAndCreateSession } from '@/externalServices/virtualLabs/session';
+import { createOrFetchParticipant } from '@/externalServices/virtualLabs/participant';
+import { createPlayerInVirtualLabs } from '@/externalServices/virtualLabs/player'; // Import player management logic
 
 const prisma = new PrismaClient();
 

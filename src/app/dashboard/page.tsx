@@ -8,6 +8,7 @@ import { connectUser, setLichessData } from "../../slices/user"; // Import the R
 import { updateSession } from "../../slices/session";
 import { updateParticipant } from "../../slices/participant";
 import DepositForm from "../../components/DepositForm";
+import ReduxStateDisplay from "../../components/ReduxStateDisplay";
 import Cookies from "js-cookie";
 
 const Dashboard = () => {
@@ -55,7 +56,7 @@ const Dashboard = () => {
     <div>
       <h1>Welcome to the Dashboard</h1>
       <p>This is the dashboard after a successful Lichess login.</p>
-      <pre>{JSON.stringify(reduxState, null, 2)}</pre> {/* Display Redux state */}
+      <ReduxStateDisplay /> {/* Display the Redux state */}
       <DepositForm /> {/* Display the DepositForm component */}
     </div>
   );
