@@ -24,7 +24,7 @@ export async function connectWallet() {
       params: [message, walletAddress],
     });
 
-    const response = await fetch('/api/connect', {
+    const response = await fetch('/api/user/connect', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

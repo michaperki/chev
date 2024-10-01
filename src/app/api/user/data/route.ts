@@ -67,6 +67,7 @@ export async function GET(request: Request) {
       success: true,
       walletAddress,
       userId: user.id,
+      playerId: player._id,
       sessionId: session._id,
       participantId: participant._id,
       balance: session.balance,

@@ -1,9 +1,9 @@
 
-import { authenticateWithVirtualLabs } from '../../../services/virtualLabs/user';
-import { createPlayerInVirtualLabs } from '../../../services/virtualLabs/player';
-import { checkAndCreateSession } from '../../../services/virtualLabs/session';
-import { upsertUserAndToken } from '../../../services/user'; // Import this
-import { checkAndReturnLichessToken } from '../../../services/lichess';
+import { authenticateWithVirtualLabs } from '@/externalServices/virtualLabs/user';
+import { createPlayerInVirtualLabs } from '@/externalServices/virtualLabs/player';
+import { checkAndCreateSession } from '@/externalServices/virtualLabs/session';
+import { upsertUserAndToken } from '@/services/user';
+import { checkAndReturnLichessToken } from '@/repositories/lichess';
 
 import { NextResponse } from 'next/server';
 

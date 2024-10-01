@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   const verifier = base64URLEncode(crypto.randomBytes(32));
   const challenge = base64URLEncode(sha256(Buffer.from(verifier)));
 
-  const url = new URL(`${request.headers.get('origin')}/api/lichess/callback`);
+  const url = new URL(`${request.headers.get('origin')}/api/user/lichess/callback`);
   
   // Store the verifier in cookies or session for later use
   const response = NextResponse.redirect(`https://lichess.org/oauth?` + new URLSearchParams({

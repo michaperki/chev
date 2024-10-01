@@ -37,7 +37,7 @@ const Header = () => {
 
       // If wallet is connected but Lichess token isn't in Redux, fetch from backend
       if (!lichessToken) {
-        fetch(`/api/lichess/token?walletAddress=${storedWalletAddress}`)
+        fetch(`/api/user/lichess/token?walletAddress=${storedWalletAddress}`)
           .then((response) => response.json())
           .then((data) => {
             if (data.lichessToken) {

@@ -19,7 +19,7 @@ const LichessLoginCallback = () => {
   useEffect(() => {
     const fetchLichessToken = async (code: string, verifier: string) => {
       try {
-        const response = await fetch("/api/lichess/callback", {
+        const response = await fetch("/api/user/lichess/callback", {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });
